@@ -6,10 +6,11 @@ import datetime
 import json
 import sqlite3
 import uuid
+from collections.abc import Mapping
 from typing import Any
 from typing import TypeAlias
 
-from userdata import db
+from userdata import stores
 
 Row: TypeAlias = dict[str, Any]
 
@@ -17,19 +18,19 @@ Row: TypeAlias = dict[str, Any]
 def save(
     account: sqlite3.Connection,
     table: str,
-    row: Row,
+    row: Mapping[str, Any],
     event_type: str,
     actor_name: str = "claude",
     replace: bool = False,
 ) -> Row:
     """Inserts a row and records the change as an event, atomically."""
     stored = {key: _encode(value) for key, value in row.items()}
-    verb = "insert or replace" if replace else "insert"
+    insert_verb = "insert or replace" if replace else "insert"
     columns = ", ".join(stored)
-    marks = ", ".join("?" * len(stored))
-    with db.transaction(account):
+    placeholders = ", ".join("?" * len(stored))
+    with stores.transaction(account):
         account.execute(
-            f"{verb} into {table} ({columns}) values ({marks})",
+            f"{insert_verb} into {table} ({columns}) values ({placeholders})",
             tuple(stored.values()),
         )
         record(
@@ -46,7 +47,7 @@ def save(
 def record(
     account: sqlite3.Connection,
     event_type: str,
-    details: Row,
+    details: Mapping[str, Any],
     session_id: str | None = None,
     project_id: str | None = None,
     actor_name: str = "claude",
@@ -88,21 +89,6 @@ def history(
     )
 
 
-def remove_from_list(
-    account: sqlite3.Connection, list_name: str, ticker: str
-) -> Row:
-    """Takes a ticker off a list; the membership is kept, marked removed."""
-    removed = {"list_name": list_name, "ticker": ticker.upper()}
-    with db.transaction(account):
-        account.execute(
-            "update list_members set removed_at = ? where list_name = ?"
-            " and ticker = ? and removed_at is null",
-            (now(), list_name, removed["ticker"]),
-        )
-        record(account, "list_removed", removed)
-    return removed
-
-
 def next_version(account: sqlite3.Connection, table: str, name: str) -> int:
     """Returns the version number a new row of a versioned table gets."""
     key = {"skills": "skill_name", "concepts": "concept_name"}[table]
@@ -115,7 +101,11 @@ def next_version(account: sqlite3.Connection, table: str, name: str) -> int:
 
 
 def latest_concept(account: sqlite3.Connection, concept_name: str) -> Row:
-    """Returns the newest version of an own concept, formula decoded."""
+    """Returns the newest version of an own concept, formula decoded.
+
+    Raises:
+        KeyError: If the concept was never defined.
+    """
     rows = select(
         account,
         "select * from concepts where concept_name = ?"

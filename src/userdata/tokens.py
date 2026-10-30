@@ -9,7 +9,12 @@ SCOPE = "userdata"
 
 
 class AuthentikVerifier:
-    """Accepts authentik access tokens issued for USERDATA."""
+    """Accepts authentik access tokens issued for USERDATA.
+
+    Attributes:
+        issuer: The authentik provider's issuer URL, ending in a slash.
+        audience: The client id the token must be issued for.
+    """
 
     def __init__(self, issuer: str, audience: str) -> None:
         """Prepares the verifier; keys are fetched on first use and cached."""

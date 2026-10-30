@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Tools for skills and their runs, and own XBRL concepts."""
 
-from mcp.server.mcpserver import Context
+from mcp.server import mcpserver
 
 from userdata import account
 from userdata import market
@@ -11,13 +11,13 @@ from userdata import stores
 
 
 async def save_skill(
-    context: Context,
+    context: mcpserver.Context,
     skill_name: str,
     skill_text: str,
     skill_settings: account.Row,
 ) -> account.Row:
     """Saves a new version of a skill; old versions are kept."""
-    store = stores.of(context).account
+    store = stores.from_context(context).account
     row = {
         "skill_name": skill_name,
         "skill_text": skill_text,
@@ -29,13 +29,13 @@ async def save_skill(
 
 
 async def start_run(
-    context: Context,
+    context: mcpserver.Context,
     skill_name: str,
     run_inputs: account.Row,
     session_id: str | None = None,
 ) -> account.Row:
     """Starts a run of the latest version of a skill."""
-    store = stores.of(context).account
+    store = stores.from_context(context).account
     latest = account.next_version(store, "skills", skill_name) - 1
     row = {
         "run_id": account.new_id(),
@@ -50,10 +50,10 @@ async def start_run(
 
 
 async def finish_run(
-    context: Context, run_id: str, run_status: str, report: str
+    context: mcpserver.Context, run_id: str, run_status: str, report: str
 ) -> account.Row:
     """Ends a run as "ok" or "failed" and keeps its report."""
-    store = stores.of(context).account
+    store = stores.from_context(context).account
     store.execute(
         "update skill_runs set run_status = ?, report_text = ?,"
         " finished_at = ? where run_id = ?",
@@ -64,13 +64,13 @@ async def finish_run(
 
 
 async def define_concept(
-    context: Context,
+    context: mcpserver.Context,
     concept_name: str,
     definition_text: str,
     concept_formula: list[account.Row],
 ) -> account.Row:
     """Defines an own XBRL concept as a weighted sum of reported ones."""
-    store = stores.of(context).account
+    store = stores.from_context(context).account
     row = {
         "concept_name": concept_name,
         "definition_text": definition_text,
@@ -82,10 +82,10 @@ async def define_concept(
 
 
 async def compute_concept(
-    context: Context, concept_name: str, ticker: str
+    context: mcpserver.Context, concept_name: str, ticker: str
 ) -> list[account.Row]:
     """Computes an own concept from a company's facts and stores it."""
-    opened = stores.of(context)
+    opened = stores.from_context(context)
     concept = account.latest_concept(opened.account, concept_name)
     cik = sec.pull_company(opened.market, ticker)["cik"]
     formula = concept["concept_formula"]
@@ -107,10 +107,10 @@ async def compute_concept(
     return values
 
 
-TOOLS = [
+TOOLS = (
     save_skill,
     start_run,
     finish_run,
     define_concept,
     compute_concept,
-]
+)

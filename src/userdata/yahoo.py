@@ -51,9 +51,9 @@ def pull_statements(
     market_store: duckdb.DuckDBPyConnection, ticker: str, timescale: str
 ) -> int:
     """Stores Yahoo's three statements ("yearly", "quarterly", "trailing")."""
-    handle = yfinance.Ticker(ticker)
+    yahoo_ticker = yfinance.Ticker(ticker)
     frames = [
-        _statement_rows(getattr(handle, method)(freq=timescale), name)
+        _statement_rows(getattr(yahoo_ticker, method)(freq=timescale), name)
         for name, method in _STATEMENTS.items()
     ]
     frame = pd.concat(frames, ignore_index=True)
@@ -93,12 +93,12 @@ def pull_profile(
 
 
 def _statement_rows(frame: pd.DataFrame, name: str) -> pd.DataFrame:
-    rows = (
+    statement_rows = (
         frame.rename_axis("line_item")
         .reset_index()
         .melt(
             id_vars="line_item", var_name="period_end", value_name="line_value"
         )
     )
-    rows["statement_name"] = name
-    return rows
+    statement_rows["statement_name"] = name
+    return statement_rows

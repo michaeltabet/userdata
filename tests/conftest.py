@@ -7,7 +7,7 @@ import pathlib
 import pytest
 
 from userdata import config as config_lib
-from userdata import db
+from userdata import stores
 
 
 @pytest.fixture(name="config")
@@ -25,5 +25,5 @@ def config_fixture(tmp_path: pathlib.Path) -> config_lib.Config:
 
 @pytest.fixture(name="stores")
 def stores_fixture(config: config_lib.Config):
-    with db.open_stores(config) as opened:
+    with stores.open_stores(config) as opened:
         yield opened

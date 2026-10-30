@@ -3,6 +3,7 @@
 """The DuckDB market store: loading frames, reading rows, own concepts."""
 
 import re
+from collections.abc import Sequence
 from typing import Any
 from typing import TypeAlias
 
@@ -74,7 +75,11 @@ order by 1
 
 
 def query(market: duckdb.DuckDBPyConnection, sql: str) -> list[Row]:
-    """Runs one read-only SELECT on the market store and returns the rows."""
+    """Runs one read-only SELECT on the market store and returns the rows.
+
+    Raises:
+        ValueError: If the text is not exactly one SELECT statement.
+    """
     statements = market.extract_statements(sql)
     if len(statements) != 1 or (
         statements[0].type != duckdb.StatementType.SELECT
@@ -84,7 +89,7 @@ def query(market: duckdb.DuckDBPyConnection, sql: str) -> list[Row]:
 
 
 def concept_values(
-    market: duckdb.DuckDBPyConnection, formula: list[Row], cik: str
+    market: duckdb.DuckDBPyConnection, formula: Sequence[Row], cik: str
 ) -> list[Row]:
     """Computes an own concept from a company's reported facts."""
     market.register("weights", pd.DataFrame(formula))

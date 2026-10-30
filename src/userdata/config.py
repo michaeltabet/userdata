@@ -10,7 +10,17 @@ import tomllib
 
 @dataclasses.dataclass(frozen=True)
 class Config:
-    """The settings file, as values."""
+    """The settings file, as values.
+
+    Attributes:
+        data_dir: Directory holding account.db and market.duckdb.
+        host: Address the HTTP server binds to.
+        port: Port the HTTP server listens on.
+        sec_user_agent: Name and contact SEC requires on every request.
+        public_url: The server's public base URL, for sign-in metadata.
+        auth_issuer: The authentik issuer URL; empty means no sign-in.
+        auth_audience: The client id tokens must be issued for.
+    """
 
     data_dir: pathlib.Path
     host: str
@@ -32,7 +42,11 @@ class Config:
 
 
 def load(path: pathlib.Path | None = None) -> Config:
-    """Reads the settings file."""
+    """Reads the settings file.
+
+    Raises:
+        KeyError: If USERDATA_CONFIG or a required setting is missing.
+    """
     if path is None:
         path = pathlib.Path(os.environ["USERDATA_CONFIG"])
     values = tomllib.loads(path.read_text(encoding="utf-8"))

@@ -14,14 +14,14 @@ def pull_company(
     market_store: duckdb.DuckDBPyConnection, ticker: str
 ) -> market.Row:
     """Stores a company's SEC profile and returns it, CIK included."""
-    data = edgar.Company(ticker).data
+    entity = edgar.Company(ticker).data
     company = {
-        "cik": str(data.cik),
-        "company_name": data.name,
-        "sic_code": data.sic,
-        "fiscal_year_end": data.fiscal_year_end,
-        "tickers": json.dumps(data.tickers),
-        "exchanges": json.dumps(data.exchanges),
+        "cik": str(entity.cik),
+        "company_name": entity.name,
+        "sic_code": entity.sic,
+        "fiscal_year_end": entity.fiscal_year_end,
+        "tickers": json.dumps(entity.tickers),
+        "exchanges": json.dumps(entity.exchanges),
     }
     market_store.execute(
         "insert or replace into companies (cik, company_name, sic_code,"
@@ -65,7 +65,11 @@ def pull_filings(
 
 
 def pull_facts(market_store: duckdb.DuckDBPyConnection, ticker: str) -> int:
-    """Stores every XBRL fact SEC holds for a company; returns how many."""
+    """Stores every XBRL fact SEC holds for a company; returns how many.
+
+    Raises:
+        ValueError: If SEC holds no XBRL facts for the company.
+    """
     company = edgar.Company(ticker)
     entity_facts = company.get_facts()
     if entity_facts is None:

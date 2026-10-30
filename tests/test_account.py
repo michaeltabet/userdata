@@ -8,6 +8,7 @@ import sqlite3
 import pytest
 
 from userdata import account
+from userdata import list_tools
 
 
 def _note(store, text):
@@ -68,7 +69,7 @@ def test_list_keeps_who_was_dropped_and_readded(stores):
         }
         account.save(store, "list_members", member, "list_added")
         if reason == "same regulator":
-            account.remove_from_list(store, "peers", "AEP")
+            list_tools._mark_removed(store, "peers", "AEP")  # pylint: disable=protected-access
 
     everyone = account.select(store, "select * from list_members")
     current = [row for row in everyone if row["removed_at"] is None]
