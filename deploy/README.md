@@ -17,8 +17,7 @@ Data lives in `/srv/data/userdata`.
 ## Build and run
 
 ```sh
-deploy/deploy.sh image   # builds userdata:<git sha> on testing, loads it on vm1
-deploy/deploy.sh up      # starts both containers on vm1
+ansible-playbook -i "testing,vm1," deploy/install.yml
 ```
 
 ## Connect Claude

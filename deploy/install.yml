@@ -1,0 +1,80 @@
+# Installs USERDATA: builds the image on a build host, runs it on a run host.
+# To keep existing stores, set userdata_data_dir to the directory holding
+# account.db and market.duckdb; migrations only add what is missing.
+#   ansible-playbook -i "testing,vm1," deploy/install.yml
+- name: Build the image
+  hosts: testing
+  vars:
+    userdata_version: "{{ lookup('ansible.builtin.pipe', 'git rev-parse --short HEAD') }}"
+    build_dir: "/tmp/userdata-build-{{ userdata_version }}"
+  tasks:
+    - name: Pack the committed source  # noqa: command-instead-of-module
+      delegate_to: localhost
+      ansible.builtin.command: >-
+        git archive --format=tar.gz -o /tmp/userdata-{{ userdata_version }}.tar.gz HEAD
+      args:
+        chdir: "{{ playbook_dir }}/.."
+      changed_when: true
+    - name: Make the build directory
+      ansible.builtin.file:
+        path: "{{ build_dir }}"
+        state: directory
+        mode: "0755"
+    - name: Unpack the source on the build host
+      ansible.builtin.unarchive:
+        src: "/tmp/userdata-{{ userdata_version }}.tar.gz"
+        dest: "{{ build_dir }}"
+      notify: Remove the build directory
+    - name: Build the image
+      ansible.builtin.command: >-
+        docker build -q -f deploy/Dockerfile -t userdata:{{ userdata_version }} .
+      args:
+        chdir: "{{ build_dir }}"
+      changed_when: true
+  handlers:
+    - name: Remove the build directory
+      ansible.builtin.file:
+        path: "{{ build_dir }}"
+        state: absent
+
+- name: Run it
+  hosts: vm1
+  vars:
+    userdata_version: "{{ lookup('ansible.builtin.pipe', 'git rev-parse --short HEAD') }}"
+    userdata_run_dir: /srv/stack/userdata
+    userdata_data_dir: /srv/data/userdata
+  tasks:
+    - name: Copy the image from the build host
+      delegate_to: localhost
+      ansible.builtin.shell: >-
+        set -o pipefail &&
+        ssh testing docker save userdata:{{ userdata_version }}
+        | ssh vm1 docker load -q
+      args:
+        executable: /bin/bash
+      changed_when: true
+    - name: Make the directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        mode: "0700"
+      loop:
+        - {path: "{{ userdata_run_dir }}", owner: root}
+        - {path: /srv/stack/funnel/userdata, owner: root}
+        - {path: "{{ userdata_data_dir }}", owner: "10001"}
+    - name: Copy the settings, compose file and funnel config
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ userdata_run_dir }}/{{ item }}"
+        mode: "0600"
+      loop: [userdata.toml, compose.yml, funnel-userdata.json]
+    - name: Start the server and its funnel
+      ansible.builtin.shell: >-
+        TS_FUNNEL_AUTHKEY="$(sed -n 's/^TS_FUNNEL_AUTHKEY=//p' /srv/basci/secrets.env)"
+        USERDATA_VERSION={{ userdata_version }}
+        USERDATA_DATA_DIR={{ userdata_data_dir }}
+        docker compose up -d
+      args:
+        chdir: "{{ userdata_run_dir }}"
+      changed_when: true

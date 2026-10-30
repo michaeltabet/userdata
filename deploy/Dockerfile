@@ -11,7 +11,6 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src ./src
-COPY deploy/userdata.toml ./userdata.toml
 COPY migrations ./migrations
 RUN uv sync --frozen --no-dev && uv pip install "arelle-release>=2.47,<3"
 
