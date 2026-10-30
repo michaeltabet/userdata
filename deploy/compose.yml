@@ -1,33 +1,41 @@
 # Copyright 2026 Michael Tabet
 # SPDX-License-Identifier: MIT
 #
-# Runs USERDATA behind a Cloudflare Tunnel at v1.aggviz.com. No port is
-# opened on the host. Tokens come from the environment, filled from
-# Bitwarden Secrets Manager at start (never written to disk):
-#   bws run -- docker compose -f deploy/compose.yml up -d
+# USERDATA on vm1, published the same way as the tracker MCP: a Tailscale
+# Funnel container (tag:funnel) in front of the server, on the stack's
+# `stack` network, at https://userdata.tail05f41d.ts.net. The image is
+# built on testing and loaded onto vm1 (no source code on prod). Secrets
+# come from the environment at start, never from files written here.
 services:
   userdata:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+    image: userdata:${USERDATA_VERSION:-latest}
+    container_name: userdata
     restart: unless-stopped
     environment:
       USERDATA_SEC_USER_AGENT: ${USERDATA_SEC_USER_AGENT}
-      USERDATA_AUTH_ISSUER: ${USERDATA_AUTH_ISSUER}
-      USERDATA_AUTH_AUDIENCE: ${USERDATA_AUTH_AUDIENCE}
-      USERDATA_PUBLIC_URL: https://v1.aggviz.com
+      USERDATA_PUBLIC_URL: https://userdata.tail05f41d.ts.net
+      USERDATA_AUTH_ISSUER: https://auth.tail05f41d.ts.net/application/o/userdata-mcp/
+      USERDATA_AUTH_AUDIENCE: userdata-mcp
     volumes:
       - /srv/data/userdata:/data
-    networks: [userdata]
+    networks: [stack]
 
-  tunnel:
-    image: cloudflare/cloudflared:2026.10.7
+  userdata-funnel:
+    image: tailscale/tailscale:v1.102.4
+    container_name: userdata-funnel
+    hostname: userdata
     restart: unless-stopped
-    command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${USERDATA_TUNNEL_TOKEN}
+      TS_AUTHKEY: ${TS_FUNNEL_AUTHKEY}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve.json
+      TS_USERSPACE: "true"
+    volumes:
+      - /srv/stack/funnel/userdata:/var/lib/tailscale
+      - ./funnel-userdata.json:/config/serve.json:ro
     depends_on: [userdata]
-    networks: [userdata]
+    networks: [stack]
 
 networks:
-  userdata: {}
+  stack:
+    external: true

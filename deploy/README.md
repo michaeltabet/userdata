@@ -1,32 +1,35 @@
 # Deploy
 
-USERDATA runs on one host as two containers: the server and a Cloudflare
-Tunnel that publishes it at `https://v1.aggviz.com`. Nothing listens on a
-public port. Data lives in `/srv/data/userdata` and is backed up to B2.
+USERDATA runs on vm1 next to the tracker MCP and is published the same
+way: a Tailscale Funnel container in front of it, at
+`https://userdata.tail05f41d.ts.net`. Sign-in is the stack's authentik.
+Data lives in `/srv/data/userdata`.
 
 ## One-time setup
 
-1. **Tunnel.** In Cloudflare Zero Trust, create a tunnel named `userdata`
-   with a public hostname `v1.aggviz.com` pointing to
-   `http://userdata:8765`. Store its token in Bitwarden Secrets Manager as
-   `userdata-tunnel-token`.
-2. **Login.** Copy `authentik-userdata-mcp.yaml` into the stack repo's
-   `authentik/blueprints/`; the authentik worker applies it. It creates the
-   public client `userdata-mcp` with PKCE, allowed for akadmin only. Then
-   `USERDATA_AUTH_ISSUER=https://auth.tail05f41d.ts.net/application/o/userdata-mcp/`
-   and `USERDATA_AUTH_AUDIENCE=userdata-mcp`.
-3. **SEC.** Set `USERDATA_SEC_USER_AGENT` to a name and contact, as SEC's
-   fair-access policy requires.
+1. **Login.** Copy `authentik-userdata-mcp.yaml` into the stack repo's
+   `authentik/blueprints/`; the authentik worker applies it. It creates
+   the public client `userdata-mcp` (PKCE, akadmin only) with issuer
+   `https://auth.tail05f41d.ts.net/application/o/userdata-mcp/`.
+2. **Funnel key.** The stack's reusable `tag:funnel` key,
+   `TS_FUNNEL_AUTHKEY` in vm1's `/srv/basci/secrets.env`.
 
-## Run
+## Build and run
 
 ```sh
-bws run -- docker compose -f deploy/compose.yml up -d --build
+deploy/deploy.sh image   # builds userdata:<git sha> on testing, loads it on vm1
+deploy/deploy.sh up      # starts both containers on vm1
 ```
 
 ## Connect Claude
 
-Claude settings, Connectors, Add custom connector, URL
-`https://v1.aggviz.com/mcp`, client id `userdata-mcp` under advanced settings, then sign in
-with authentik once. It then
-works in the Claude apps on phone, web and desktop.
+Claude settings, Connectors, Add custom connector:
+URL `https://userdata.tail05f41d.ts.net/mcp`, client id `userdata-mcp`
+under advanced settings. Sign in with authentik once. It then works in
+the Claude apps on phone, web and desktop.
+
+## Later: v1.aggviz.com
+
+Needs a Cloudflare tunnel, which needs a token with Account, Cloudflare
+Tunnel, Edit. Point the tunnel at `http://userdata:8765` and change
+`USERDATA_PUBLIC_URL`.

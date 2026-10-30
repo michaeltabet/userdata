@@ -20,4 +20,4 @@ ENV USERDATA_DIR=/data PATH=/app/.venv/bin:$PATH
 VOLUME ["/data"]
 EXPOSE 8765
 
-CMD ["sh", "-c", "userdata migrate && userdata serve --transport http --host 0.0.0.0 --port 8765"]
+CMD ["sh", "-c", "userdata migrate && exec userdata serve --transport http --host 0.0.0.0 --port 8765"]
