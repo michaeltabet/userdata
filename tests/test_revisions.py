@@ -31,9 +31,9 @@ def test_price_revision_is_a_new_row(analytics: olap.OlapEngine) -> None:
     _insert_price(analytics, "b" * 64, 10.5, "2026-10-30T21:00:00Z")
     _insert_price(analytics, "a" * 64, 10.0, "2026-10-29T21:00:00Z")
     assert analytics.execute("select count(*) from price_daily") == [(2,)]
-    assert analytics.execute(
-        "select close, raw_sha256 from price_latest"
-    ) == [(10.5, "b" * 64)]
+    assert analytics.execute("select close, raw_sha256 from price_latest") == [
+        (10.5, "b" * 64)
+    ]
 
 
 def test_fx_revision_is_a_new_row(analytics: olap.OlapEngine) -> None:

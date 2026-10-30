@@ -17,9 +17,7 @@ import sys
 
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 _STORES = (("sqlite", "oltp"), ("duckdb", "olap"))
-_KIND = re.compile(
-    r"^-- (sor|projection|reference|derived|view): (.+)$"
-)
+_KIND = re.compile(r"^-- (sor|projection|reference|derived|view): (.+)$")
 _VIEW = re.compile(r"^create view (\w+) as$")
 _CREATE = re.compile(r"^create table (\w+) \($")
 _COLUMN = re.compile(r"^\s{4}(\w+) \w+")

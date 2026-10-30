@@ -169,9 +169,7 @@ def test_identifier_update_into_overlap_raises(
 ) -> None:
     """Moving an interval onto another one is rejected too."""
     _insert_assignment(store, "listing-a", "2024-01-01", "2025-01-01")
-    second = _insert_assignment(
-        store, "listing-b", "2025-01-01", "9999-12-31"
-    )
+    second = _insert_assignment(store, "listing-b", "2025-01-01", "9999-12-31")
     with pytest.raises(sqlite3.IntegrityError, match="overlaps"):
         store.execute(
             "update identifier_assignment set valid_from = '2024-12-01'"

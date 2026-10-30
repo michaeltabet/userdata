@@ -13,6 +13,7 @@ test:
 
 lint:
 	$(UV) run ruff check src tests scripts
+	$(UV) run ruff format --check src tests scripts
 
 licenses:
 	$(UV) run pip-licenses --from=mixed --allow-only="$(ALLOWED)" --ignore-packages userdata
