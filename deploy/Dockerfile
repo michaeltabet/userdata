@@ -13,9 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md LICENSE ./
+RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 COPY migrations ./migrations
-RUN uv sync --frozen --no-dev && uv pip install "arelle-release>=2.47,<3"
+RUN uv sync --frozen --no-dev
 
 RUN useradd --system --uid 10001 userdata
 USER userdata
