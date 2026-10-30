@@ -11,11 +11,6 @@ services:
     image: userdata:${USERDATA_VERSION:-latest}
     container_name: userdata
     restart: unless-stopped
-    environment:
-      USERDATA_SEC_USER_AGENT: ${USERDATA_SEC_USER_AGENT}
-      USERDATA_PUBLIC_URL: https://userdata.tail05f41d.ts.net
-      USERDATA_AUTH_ISSUER: https://auth.tail05f41d.ts.net/application/o/userdata-mcp/
-      USERDATA_AUTH_AUDIENCE: userdata-mcp
     volumes:
       - /srv/data/userdata:/data
     networks: [stack]

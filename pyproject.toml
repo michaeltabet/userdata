@@ -8,7 +8,11 @@ license = "MIT"
 dependencies = [
     "mcp>=2.1.0,<3",
     "duckdb>=1.4.0",
+    "edgartools @ git+https://github.com/michaeltabet/edgartools@userdata",
+    "pyarrow>=23.0.1",
     "pydantic>=2.4",
+    "pyjwt[crypto]>=2.10,<3",
+    "yfinance>=1.6,<2",
 ]
 
 [dependency-groups]
@@ -24,6 +28,9 @@ userdata = "userdata.cli:main"
 [build-system]
 requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/userdata"]

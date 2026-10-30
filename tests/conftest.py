@@ -1,56 +1,29 @@
-"""Shared fixtures: a fresh data directory and migrated stores per test."""
+# Copyright 2026 Michael Tabet
+# SPDX-License-Identifier: MIT
+"""Fixtures: both stores, empty and migrated, in a temporary directory."""
 
 import pathlib
-from collections.abc import Iterator
 
 import pytest
 
-from userdata import config
-from userdata import engines
-from userdata.engines import olap
-from userdata.engines import oltp
+from userdata import config as config_lib
+from userdata import db
 
 
-@pytest.fixture
-def cfg(tmp_path: pathlib.Path) -> config.Config:
-    """Returns a Config whose data directory is the test's tmp_path.
-
-    Args:
-        tmp_path: The pytest temporary directory.
-
-    Returns:
-        The configuration.
-    """
-    return config.Config(data_dir=tmp_path / "data")
-
-
-@pytest.fixture
-def store(cfg: config.Config) -> Iterator[oltp.OltpEngine]:
-    """Yields a migrated SQLite engine and closes it afterwards.
-
-    Args:
-        cfg: The test configuration.
-
-    Yields:
-        The OLTP engine.
-    """
-    engine = engines.open_oltp(cfg)
-    engine.migrate()
-    yield engine
-    engine.close()
+@pytest.fixture(name="config")
+def config_fixture(tmp_path: pathlib.Path) -> config_lib.Config:
+    return config_lib.Config(
+        data_dir=tmp_path / "data",
+        host="127.0.0.1",
+        port=0,
+        sec_user_agent="test",
+        public_url="http://test",
+        auth_issuer="",
+        auth_audience="",
+    )
 
 
-@pytest.fixture
-def analytics(cfg: config.Config) -> Iterator[olap.OlapEngine]:
-    """Yields a migrated DuckDB engine and closes it afterwards.
-
-    Args:
-        cfg: The test configuration.
-
-    Yields:
-        The OLAP engine.
-    """
-    engine = engines.open_olap(cfg)
-    engine.migrate()
-    yield engine
-    engine.close()
+@pytest.fixture(name="stores")
+def stores_fixture(config: config_lib.Config):
+    with db.open_stores(config) as opened:
+        yield opened

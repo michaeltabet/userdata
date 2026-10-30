@@ -11,13 +11,14 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src ./src
+COPY deploy/userdata.toml ./userdata.toml
 COPY migrations ./migrations
 RUN uv sync --frozen --no-dev && uv pip install "arelle-release>=2.47,<3"
 
 RUN useradd --system --uid 10001 userdata
 USER userdata
-ENV USERDATA_DIR=/data PATH=/app/.venv/bin:$PATH
+ENV USERDATA_CONFIG=/app/userdata.toml PATH=/app/.venv/bin:$PATH
 VOLUME ["/data"]
 EXPOSE 8765
 
-CMD ["sh", "-c", "userdata migrate && exec userdata serve --transport http --host 0.0.0.0 --port 8765"]
+CMD ["userdata", "serve", "--http"]

@@ -10,7 +10,6 @@ set -euo pipefail
 readonly BUILD_HOST="testing"
 readonly RUN_HOST="vm1"
 readonly RUN_DIR="/srv/stack/userdata"
-readonly SEC_USER_AGENT="USERDATA research (github.com/michaeltabet/userdata)"
 version="$(git -C "$(dirname "$0")/.." rev-parse --short HEAD)"
 readonly version
 
@@ -27,7 +26,7 @@ start() {
   scp -q "$(dirname "$0")/compose.yml" "$(dirname "$0")/funnel-userdata.json" "${RUN_HOST}:${RUN_DIR}/"
   # The funnel key is read on vm1 from the stack's secrets file and passed
   # to compose through the environment only; it never leaves vm1.
-  ssh "${RUN_HOST}" "cd ${RUN_DIR} && TS_FUNNEL_AUTHKEY=\$(sed -n 's/^TS_FUNNEL_AUTHKEY=//p' /srv/basci/secrets.env) USERDATA_VERSION=${version} USERDATA_SEC_USER_AGENT='${SEC_USER_AGENT}' docker compose up -d"
+  ssh "${RUN_HOST}" "cd ${RUN_DIR} && TS_FUNNEL_AUTHKEY=\$(sed -n 's/^TS_FUNNEL_AUTHKEY=//p' /srv/basci/secrets.env) USERDATA_VERSION=${version} docker compose up -d"
 }
 
 main() {

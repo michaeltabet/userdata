@@ -1,0 +1,9 @@
+# USERDATA settings. Copy to userdata.toml and point USERDATA_CONFIG at it.
+data_dir = "~/Slop/userdata-data"
+host = "127.0.0.1"
+port = 8765
+sec_user_agent = "USERDATA research test@test.com"
+public_url = "http://127.0.0.1:8765"
+# Empty: no sign-in.
+auth_issuer = ""
+auth_audience = ""

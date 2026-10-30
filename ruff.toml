@@ -6,7 +6,8 @@ target-version = "py314"
 
 [lint]
 select = ["E", "F", "W", "I", "N", "D", "UP", "B", "ANN", "ICN", "TID"]
-ignore = ["D203", "D213", "ANN401"]
+# UP040: Google 3.19.6 asks for `X: TypeAlias = ...`, not `type X = ...`.
+ignore = ["D203", "D213", "ANN401", "UP040"]
 
 [lint.pydocstyle]
 convention = "google"
@@ -18,3 +19,12 @@ known-first-party = ["userdata"]
 [format]
 quote-style = "double"
 docstring-code-format = true
+
+# Google 2.2.4: `import y as z` only for standard abbreviations (np, pd).
+[lint.flake8-import-conventions]
+aliases = { numpy = "np", pandas = "pd" }
+
+# Google 3.8.2.1 and 3.19.1: tests need no module docstrings, and only
+# public APIs must be annotated.
+[lint.per-file-ignores]
+"tests/*" = ["ANN", "D100", "D103"]

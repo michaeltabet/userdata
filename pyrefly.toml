@@ -1,2 +1,2 @@
 preset = "strict"
-project-includes = ["src", "scripts", "tests"]
+project-includes = ["src"]

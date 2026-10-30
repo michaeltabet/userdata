@@ -1,46 +1,30 @@
-"""Command line entry point: `userdata migrate`."""
+# Copyright 2026 Michael Tabet
+# SPDX-License-Identifier: MIT
+"""Command line: `userdata serve` (stdio) or `userdata serve --http`."""
 
 import argparse
-import sys
+
+import edgar
 
 from userdata import config as config_lib
-from userdata import engines
+from userdata import server
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Parses arguments and runs the command.
-
-    Args:
-        argv: Arguments without the program name. None means sys.argv.
-
-    Returns:
-        The process exit code.
-    """
+def main() -> None:
+    """Serves the tools until stopped."""
     parser = argparse.ArgumentParser(prog="userdata")
-    sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("migrate", help="apply pending migrations to both stores")
-    args = parser.parse_args(argv)
+    parser.add_argument("command", choices=["serve"])
+    parser.add_argument("--http", action="store_true", help="serve over HTTP")
+    arguments = parser.parse_args()
 
-    config = config_lib.from_env()
-    if args.command == "migrate":
-        return _migrate(config)
-    return 1
-
-
-def _migrate(config: config_lib.Config) -> int:
-    oltp = engines.open_oltp(config)
-    olap = engines.open_olap(config)
-    try:
-        for name in oltp.migrate():
-            print(f"oltp applied {name}")
-        for name in olap.migrate():
-            print(f"olap applied {name}")
-    finally:
-        oltp.close()
-        olap.close()
-    print(f"stores: {config.oltp_path} {config.olap_path}")
-    return 0
+    config = config_lib.load()
+    edgar.set_identity(config.sec_user_agent)
+    mcp_server = server.build_server(config)
+    if arguments.http:
+        mcp_server.run("streamable-http", host=config.host, port=config.port)
+    else:
+        mcp_server.run("stdio")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

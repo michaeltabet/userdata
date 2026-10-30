@@ -1,4 +1,3 @@
-"""USERDATA: the user's durable research account, exposed as MCP tools."""
-
-__all__ = ["__version__"]
-__version__ = "0.1.0"
+# Copyright 2026 Michael Tabet
+# SPDX-License-Identifier: MIT
+"""USERDATA: the user's research account, served to Claude over MCP."""
