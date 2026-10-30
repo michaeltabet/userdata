@@ -8,6 +8,8 @@ from typing import Any
 
 from mcp import server as mcp_server
 from mcp.server.auth import settings
+from starlette import requests
+from starlette import responses
 
 from userdata import account_tools
 from userdata import config as config_lib
@@ -48,7 +50,28 @@ def build_server(config: config_lib.Config) -> mcp_server.MCPServer:
         + market_tools.TOOLS
     ):
         server.add_tool(tool_function)
+    if config.auth_issuer:
+        _serve_root_metadata(server, config)
     return server
+
+
+def _serve_root_metadata(
+    server: mcp_server.MCPServer, config: config_lib.Config
+) -> None:
+    """Serves RFC 9728 metadata at the root path too, as Claude expects."""
+    metadata = {
+        "resource": f"{config.public_url}/mcp",
+        "authorization_servers": [config.auth_issuer],
+        "scopes_supported": [tokens.SCOPE],
+        "bearer_methods_supported": ["header"],
+    }
+
+    @server.custom_route("/.well-known/oauth-protected-resource", ["GET"])
+    async def protected_resource(
+        request: requests.Request,
+    ) -> responses.JSONResponse:
+        del request  # Unused.
+        return responses.JSONResponse(metadata)
 
 
 def _auth_settings(config: config_lib.Config) -> dict[str, Any]:
