@@ -1,5 +1,5 @@
 {
   "TCP": {"443": {"HTTPS": true}},
-  "Web": {"${TS_CERT_DOMAIN}:443": {"Handlers": {"/": {"Proxy": "http://userdata:8765"}}}},
+  "Web": {"${TS_CERT_DOMAIN}:443": {"Handlers": {"/": {"Proxy": "http://userdata-server:8765"}}}},
   "AllowFunnel": {"${TS_CERT_DOMAIN}:443": true}
 }
