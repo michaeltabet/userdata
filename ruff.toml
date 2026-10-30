@@ -1,0 +1,20 @@
+# Google Python Style Guide, strict: 80 columns, 4-space indent, Google docstrings,
+# module imports only (no `from x import name` except typing/collections.abc).
+line-length = 80
+indent-width = 4
+target-version = "py314"
+
+[lint]
+select = ["E", "F", "W", "I", "N", "D", "UP", "B", "ANN", "ICN", "TID"]
+ignore = ["D203", "D213", "ANN401"]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.isort]
+force-single-line = true
+known-first-party = ["userdata"]
+
+[format]
+quote-style = "double"
+docstring-code-format = true
